@@ -7,6 +7,8 @@
   --figtree-font: "Figtree", sans-serif;
 }
 html { background: #000; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
 body { background: #000; color: #fff; margin: 0; font-family: var(--chakra-fonts-body); -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; }
 
@@ -14,6 +16,44 @@ img { max-width: 100%; }
 .xp-desktop { display: none; }
 .xp-mobile  { display: block; }
 @media (min-width: 1366px) {
-  .xp-desktop { display: block; }
+  .xp-desktop { display: block; padding-top: 80px; }
   .xp-mobile  { display: none; }
+}
+
+/* ---- Desktop fixes ----------------------------------------------------- */
+/* Centre the phone's inner content (logo, sign-up form, sold-card stack, toggle)
+   instead of anchoring it 24% from the left with a vw-based width. */
+.xp-desktop .info-wrapper { left: 50%; transform: translateX(-50%); width: 76%; }
+.xp-desktop .info-wrapper .sign-up__logo-wrapper img { width: 64%; margin: 0 auto; }
+.xp-desktop .info-wrapper .css-rya9el { width: 100%; }
+.xp-desktop .sign-up__sold-card-container { left: 50%; transform: translateX(-50%); }
+.xp-desktop .sign-up__toggle-switch-wrapper { left: 50%; transform: translateX(-50%); }
+
+/* ---- Polish ------------------------------------------------------------ */
+/* Idle float + mouse parallax on the phone group, kept on the CSS `translate`
+   property so it never fights GSAP's transforms on the children. */
+.xp-desktop .css-fsp7c9 { --px: 0; --py: 0; --float: 0; translate: calc(var(--px) * 1px) calc((var(--py) + var(--float)) * 1px); }
+
+/* Progress dots */
+.xp-progress {
+  position: fixed; right: 28px; top: 50%; transform: translateY(-50%); z-index: 20;
+  display: flex; flex-direction: column; gap: 14px; opacity: 0; pointer-events: none;
+  transition: opacity .4s ease;
+}
+.xp-progress.is-visible { opacity: 1; pointer-events: auto; }
+.xp-progress button {
+  position: relative; width: 8px; height: 8px; border-radius: 4px; border: 0; padding: 0; cursor: pointer;
+  background: rgba(255,255,255,.25); transition: background .3s, height .3s, transform .3s;
+}
+.xp-progress button:hover { background: rgba(255,255,255,.7); }
+.xp-progress button.is-active { height: 26px; background: linear-gradient(180deg, #00f5f0, #0066ff); }
+.xp-progress button span {
+  position: absolute; right: 20px; top: 50%; transform: translateY(-50%) translateX(6px);
+  font: 600 12px/1 "Inter", sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #fff;
+  white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none;
+}
+.xp-progress button:hover span, .xp-progress button.is-active span { opacity: .9; transform: translateY(-50%) translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-desktop .css-fsp7c9 { translate: none; }
 }

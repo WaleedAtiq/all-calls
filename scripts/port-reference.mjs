@@ -42,6 +42,16 @@ const html = `<!doctype html>
       <!-- Desktop (>= 1366px): one pinned section, every state driven by the scroll timeline -->
       <div class="xp-desktop">
         ${section}
+        <nav class="xp-progress" aria-label="Sections">
+          <button data-label="hero"><span>Your next sale</span></button>
+          <button data-label="second-variation"><span>Quality calls</span></button>
+          <button data-label="replacing-iphone"><span>New clients</span></button>
+          <button data-label="sold-cards"><span>Policies sold</span></button>
+          <button data-label="toggle"><span>On / off</span></button>
+          <button data-label="sign-up-flow-in"><span>3 steps</span></button>
+          <button data-label="laptop-showoff"><span>Any device</span></button>
+          <button data-label="start-now-variation"><span>Start now</span></button>
+        </nav>
       </div>
       <!-- Below 1366px: the stacked layout with the phone renders -->
       <div class="xp-mobile">

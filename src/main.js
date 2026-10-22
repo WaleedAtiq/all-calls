@@ -1,10 +1,17 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import Lenis from "lenis";
 import "./style.css";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+/* Smooth scrolling (Lenis) ticked by GSAP so ScrollTrigger and Lenis stay in sync */
+const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+lenis.on("scroll", ScrollTrigger.update);
+gsap.ticker.add((t) => lenis.raf(t * 1000));
+gsap.ticker.lagSmoothing(0);
 
 const q = (s) => document.querySelector(s);
 const qa = (s) => gsap.utils.toArray(s);
@@ -39,6 +46,8 @@ q(".toggle-switch")?.addEventListener("click", toggle);
    (port of the reference's choreography)
    --------------------------------------------------------- */
 const mm = gsap.matchMedia();
+const dotsNav = q(".xp-progress");
+let updateDots = () => {};
 
 mm.add(
   {
@@ -74,17 +83,35 @@ mm.add(
     if (size === "xxl") { Z = `${60 * et(vw)}vw`; O = "170px"; }
 
     gsap.to(AVATARS, { opacity: 0, scale: 0 });
-    gsap.to(H1, { opacity: 1, duration: 0.2 });
+
+    // Hero intro: title characters rise in, then the copy and the button
+    gsap.set(H1, { opacity: 1 });
+    const intro = gsap.timeline({ defaults: { ease: "power3.out" } })
+      .from(split.chars, { yPercent: 110, opacity: 0, duration: 0.9, stagger: { each: 0.025, from: "start" } })
+      .from(subWords.flat(), { y: 16, opacity: 0, duration: 0.6, stagger: 0.02 }, "-=0.5")
+      .from(".buy-now-btn__sale-section", { y: 24, opacity: 0, duration: 0.6 }, "-=0.35")
+      .from(".iphone-v1", { y: 80, opacity: 0, duration: 1.2, ease: "power2.out" }, 0.2)
+      .from(CIRCLE, { opacity: 0, duration: 1.4 }, 0.3);
+
+    // Idle float + mouse parallax on the phone group (CSS `translate`, see style.css)
+    const group = q(".css-fsp7c9");
+    const float = gsap.to(group, { "--float": -10, duration: 2.8, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    const px = gsap.quickTo(group, "--px", { duration: 0.8, ease: "power2.out" });
+    const py = gsap.quickTo(group, "--py", { duration: 0.8, ease: "power2.out" });
+    const onMove = (e) => { px(((e.clientX / vw) - 0.5) * 18); py(((e.clientY / vh) - 0.5) * 12); };
+    window.addEventListener("mousemove", onMove);
 
     const tl = gsap.timeline({
-      defaults: { ease: "sine.in" },
+      defaults: { ease: "power2.inOut" },
       scrollTrigger: {
         trigger: ".container__sale-section",
         start: "1px top",
         end: "+=2000%",
         pin: true,
-        scrub: 2,
+        scrub: 1.5,
         toggleActions: "play none reverse none",
+        onUpdate: (self) => updateDots(self.progress),
+        onToggle: (self) => dotsNav?.classList.toggle("is-visible", self.isActive),
       },
     });
 
@@ -155,6 +182,7 @@ mm.add(
       .to(SOLD, { x: `${35 * et(vw)}vw`, delay: "random(1,3)", opacity: 0, duration: 4 })
       .to(H4, { opacity: 0 })
       // toggle on / off
+      .addLabel("toggle")
       .to(V2BOX, { scale: 1, y: 0, x: Z, duration: 3 })
       .to([TOGGLE, LOGO], { opacity: 1, delay: 1 })
       .to(TOGGLE, { delay: 1, onStart: toggle, onReverseComplete: toggle })
@@ -193,10 +221,28 @@ mm.add(
       .to(PHONE, { opacity: 0, delay: 1, duration: 4 }, "start-now-variation")
       .to(LAPTOP, { scale: 10, delay: 1, duration: 10 }, "start-now-variation")
       .to(LAPTOP, { opacity: 0 })
+      // the 10x laptop would otherwise keep stretching the page below the footer
+      .set(LAPTOP, { scale: 1 })
       .to(STARTNOW, { opacity: 1, duration: 3 }, "-=1")
       .to(STARTNOW, { delay: 5 });
 
+    // Progress dots: one per timeline label, click to jump there
+    const dots = qa(".xp-progress button");
+    const st = tl.scrollTrigger;
+    const labelProgress = (name) => (name === "hero" ? 0 : (tl.labels[name] ?? 0) / tl.duration());
+    const positions = dots.map((d) => labelProgress(d.dataset.label));
+    updateDots = (p) => {
+      let active = 0;
+      positions.forEach((pos, i) => { if (p >= pos - 0.01) active = i; });
+      dots.forEach((d, i) => d.classList.toggle("is-active", i === active));
+    };
+    dots.forEach((d, i) => d.addEventListener("click", () => lenis.scrollTo(st.start + (st.end - st.start) * positions[i] + 2, { duration: 1.6 })));
+
     return () => {
+      intro.kill();
+      float.kill();
+      window.removeEventListener("mousemove", onMove);
+      gsap.set(group, { clearProps: "--px,--py,--float" });
       split.revert();
       subSplits.forEach((s) => s.revert());
       icons.forEach((g) => g.classList.remove("center"));
@@ -206,3 +252,17 @@ mm.add(
     };
   }
 );
+
+/* ---------------------------------------------------------
+   Below 1366px: stacked layout with gentle reveals
+   --------------------------------------------------------- */
+mm.add("(max-width: 1365px)", () => {
+  qa(".xp-mobile .chakra-container").forEach((block) => {
+    const text = block.querySelectorAll("h2, p, button");
+    const media = block.querySelectorAll("img");
+    if (text.length) gsap.from(text, { y: 30, opacity: 0, duration: 0.8, stagger: 0.08, ease: "power3.out",
+      scrollTrigger: { trigger: block, start: "top 82%", once: true } });
+    if (media.length) gsap.from(media, { scale: 0.94, opacity: 0, duration: 1, ease: "power2.out",
+      scrollTrigger: { trigger: block, start: "top 82%", once: true } });
+  });
+});
