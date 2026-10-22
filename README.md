@@ -36,7 +36,7 @@ breakpoint tears down and rebuilds the timeline cleanly.
 
 ## What was added on top of the original
 
-- **Native scrolling** with the timeline scrub at 0.5 (the original used 2).
+- **Native scrolling** with the timeline scrub at 1.2 (the original used 2): the page never lags the wheel, the animation glides between wheel notches.
 - **Hero intro**: the title characters rise in with a stagger, then the copy, the
   button, the phone and the glow.
 - **Smoother eases**: the timeline default is `power2.inOut` instead of `sine.in`.

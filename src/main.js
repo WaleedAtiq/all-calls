@@ -116,7 +116,7 @@ mm.add(
         start: "1px top",
         end: "+=2000%",
         pin: true,
-        scrub: 0.5,
+        scrub: 1.2,
         toggleActions: "play none reverse none",
         onUpdate: (self) => updateDots(self.progress),
         onToggle: (self) => dotsNav?.classList.toggle("is-visible", self.isActive),
