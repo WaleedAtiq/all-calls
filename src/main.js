@@ -1,135 +1,208 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
+import { SplitText } from "gsap/SplitText";
 import "./style.css";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, SplitText);
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-/* ---------------------------------------------------------
-   Smooth scrolling (Lenis) driven by GSAP's ticker
-   --------------------------------------------------------- */
-const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
-lenis.on("scroll", ScrollTrigger.update);
-gsap.ticker.add((t) => lenis.raf(t * 1000));
-gsap.ticker.lagSmoothing(0);
-document.querySelectorAll('a[href^="#"]').forEach((a) => {
-  a.addEventListener("click", (e) => {
-    const target = a.getAttribute("href");
-    if (target.length > 1 && document.querySelector(target)) { e.preventDefault(); lenis.scrollTo(target, { offset: -20 }); }
-  });
-});
-
-const isMobile = () => window.matchMedia("(max-width: 900px)").matches;
+const q = (s) => document.querySelector(s);
+const qa = (s) => gsap.utils.toArray(s);
 
 /* ---------------------------------------------------------
-   Phone states — one per section the phone passes through.
-   x: offset from centre (vw, 0 on mobile), scale: phone scale,
-   glow / mobileGlow: halo opacities, tilt: rotateY while travelling.
+   Nav intro (same as the reference)
    --------------------------------------------------------- */
-const STATES = [
-  { x:  24, y:  0, scale: .85, glow: .55, mobileGlow: 0,   tilt: -10 }, // 0 hero: incoming call
-  { x:   4, y:  0, scale: 1.0, glow: .25, mobileGlow: 0,   tilt:   8 }, // 1 quality calls (icons baked in)
-  { x: -26, y:  0, scale: .90, glow: .40, mobileGlow: 0,   tilt:  -8 }, // 2 instantly connect (avatars baked in)
-  { x:   0, y: 140, scale: 1.05, glow: 0, mobileGlow: .35, tilt:   0 }, // 3 leads list (sits lower, cropped by the fold)
-  { x:  22, y:  0, scale: .80, glow: .20, mobileGlow: 0,   tilt:   8 }, // 4 on / off (rings baked in)
-];
-const STEPS = STATES.length;
+gsap.set([".logo", ".nav-menu-item"], { scaleY: 0, transformOrigin: "bottom" });
+gsap.to([".logo", ".nav-menu-item"], { scaleY: 1, stagger: 0.1, duration: 0.4, ease: "sine.inOut" });
 
-const layers   = gsap.utils.toArray(".layer");
-const features = gsap.utils.toArray(".feature");
-const dots     = gsap.utils.toArray(".dot");
-
-const vw = (n) => () => (isMobile() ? 0 : (window.innerWidth * n) / 100);
-const sc = (n) => () => (isMobile() ? 1 : n);
-const py = (n) => () => (isMobile() ? 0 : n);
-const show = (el) => gsap.set(el, { visibility: "visible" });
-const hide = (el) => gsap.set(el, { visibility: "hidden" });
+/* Scale helper used by the reference for vw-based distances (1480px design width) */
+const et = (e, t = 1480) => (e >= t ? t / e : e / t);
 
 /* ---------------------------------------------------------
-   1. Intro (on load)
+   Toggle switch inside the phone
    --------------------------------------------------------- */
-gsap.set(".phone-wrap", { x: vw(STATES[0].x), y: py(STATES[0].y), scale: sc(STATES[0].scale), force3D: true });
-gsap.set(".glow--circle", { opacity: STATES[0].glow });
-gsap.set(features, { opacity: 0, visibility: "hidden" });
-gsap.set(features[0], { opacity: 1, visibility: "visible" });
-
-gsap.timeline({ defaults: { ease: "power3.out" } })
-  .from(".nav__pill", { y: -40, opacity: 0, duration: .8 })
-  .from(features[0].querySelectorAll(".h, .lead, .btn"), { y: 40, opacity: 0, duration: .9, stagger: .1 }, "-=.4")
-  .from(".phone", { y: 90, rotateY: -18, opacity: 0, duration: 1.3, force3D: true }, "-=.9")
-  .from(".glow--circle", { scale: .6, opacity: 0, duration: 1.6 }, "<");
-
-/* ---------------------------------------------------------
-   2. Pinned, scrubbed story
-   --------------------------------------------------------- */
-const story = gsap.timeline({
-  defaults: { ease: "power2.inOut" },
-  scrollTrigger: {
-    trigger: ".story",
-    start: "top top",
-    end: () => `+=${(STEPS - 1) * 140}%`,   // 1.4 viewport heights of scroll per step
-    pin: ".story__pin",
-    scrub: 1,
-    anticipatePin: 1,
-    invalidateOnRefresh: true,
-    onUpdate(self) {
-      const idx = Math.min(STEPS - 1, Math.round(self.progress * (STEPS - 1)));
-      dots.forEach((d, i) => d.classList.toggle("is-active", i === idx));
-    },
-  },
-});
-
-for (let i = 0; i < STEPS - 1; i++) {
-  const next = i + 1;
-  const to = STATES[next];
-  const L = `s${i}`;
-  story.addLabel(L);
-
-  // Durations are relative scroll units: HOLD of stillness, then a ~2.1-unit transition.
-  const HOLD = 1.3, T = L + `+=${HOLD}`;
-  story.to({}, { duration: HOLD }, L);
-
-  // copy out
-  story.to(features[i].querySelector(".feature__inner"), { y: -30, opacity: 0, duration: .6, ease: "power2.in",
-    onComplete: () => hide(features[i]), onReverseComplete: () => show(features[i]) }, T);
-
-  // phone travels; tilt into the move and settle
-  story.to(".phone-wrap", { x: vw(to.x), y: py(to.y), scale: sc(to.scale), duration: 2, ease: "power2.inOut" }, T + "+.1");
-  story.to(".phone", { rotateY: () => (isMobile() ? 0 : to.tilt), duration: 1, ease: "power2.out" }, T + "+.1");
-  story.to(".phone", { rotateY: 0, duration: 1, ease: "power2.inOut" }, T + "+1.1");
-  story.to(".glow--circle", { opacity: to.glow, duration: 1.6 }, T + "+.1");
-  story.to(".glow--mobile", { opacity: to.mobileGlow, duration: 1.6 }, T + "+.1");
-
-  // screen crossfade mid-travel: next fades in on top, previous overlay releases after
-  story.to(layers[next], { opacity: 1, duration: 1, ease: "power1.inOut" }, T + "+.6");
-  if (i > 0) story.to(layers[i], { opacity: 0, duration: .5 }, T + "+1.4");
-
-  // copy in
-  story.fromTo(features[next].querySelector(".feature__inner"), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .8, ease: "power2.out",
-    onStart: () => { show(features[next]); gsap.set(features[next], { opacity: 1 }); }, onReverseComplete: () => hide(features[next]) }, T + "+1.3");
+let toggled = false;
+function toggle() {
+  if (toggled) {
+    gsap.to(".toggle-switch-inner", { xPercent: 0 });
+    gsap.to(".toggle-switch-bar", { backgroundColor: "rgb(112, 128, 144)", opacity: 0.5 });
+  } else {
+    gsap.to(".toggle-switch-inner", { xPercent: 80 });
+    gsap.to(".toggle-switch-bar", { backgroundColor: "rgb(49, 197, 91)", opacity: 1 });
+  }
+  toggled = !toggled;
 }
-story.addLabel(`s${STEPS - 1}`);
-story.to({}, { duration: 1.3 });
-
-// idle float on the wrapper's parent so it never fights the scroll tweens
-gsap.to(".phone-anchor", { y: -8, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 });
+q(".toggle-switch")?.addEventListener("click", toggle);
 
 /* ---------------------------------------------------------
-   3. Below the fold
+   Desktop experience: one pinned section, scrubbed timeline
+   (port of the reference's choreography)
    --------------------------------------------------------- */
-gsap.from(".steps__title", { y: 50, opacity: 0, duration: .9, ease: "power3.out",
-  scrollTrigger: { trigger: ".steps", start: "top 75%", once: true } });
-gsap.from(".steps__list li", { x: -40, opacity: 0, stagger: .15, duration: .7, ease: "power3.out",
-  scrollTrigger: { trigger: ".steps__list", start: "top 80%", once: true } });
+const mm = gsap.matchMedia();
 
-gsap.from(".start__inner > *", { y: 40, opacity: 0, stagger: .15, duration: .9, ease: "power3.out",
-  scrollTrigger: { trigger: ".start", start: "top 70%", once: true } });
-gsap.fromTo(".start__bg", { scale: 1.15, opacity: .5 }, { scale: 1, opacity: 1, ease: "none",
-  scrollTrigger: { trigger: ".start", start: "top bottom", end: "center center", scrub: true } });
+mm.add(
+  {
+    isDesktop: "(min-width: 1366px)",
+    lg: "(max-width: 1367px)",
+    xl: "(max-width: 1601px)",
+    xxl: "(max-width: 1921px)",
+  },
+  (ctx) => {
+    const { isDesktop, lg, xl, xxl } = ctx.conditions;
+    if (!isDesktop) return;
 
-gsap.from(".footer__card", { y: 40, opacity: 0, duration: .9, ease: "power3.out",
-  scrollTrigger: { trigger: ".footer", start: "top 90%", once: true } });
+    const size = lg && xl && xxl ? "lg" : !lg && xl && xxl ? "xl" : "xxl";
+    const vw = window.innerWidth, vh = window.innerHeight;
 
-let t;
-window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 200); });
+    const split = new SplitText(".heading__sale-section", { type: "chars,words" });
+    const subSplits = qa(".sub-text__sale-section div").map((el) => new SplitText(el, { type: "chars,words" }));
+    const subWords = subSplits.map((s) => s.words);
+
+    const PHONE = ".phone", V2 = ".iphone-v2", H2 = ".heading-2", H1 = ".heading-1", H3 = ".heading-3", H4 = ".heading-4", H5 = ".heading-5";
+    const h5divs = qa(`${H5} div`);
+    const AVATARS = ".instantly-avatars .instantly-avatar";
+    const V2BOX = ".phone-v2-box", AVBOX = ".avatar-box", CIRCLE = ".circle-box";
+    const SOLD = ".sold-card-container .sold-card";
+    const steps = qa(".heading-step");
+    const LAPTOP = ".laptop", STARTNOW = ".start-now";
+    const TOGGLE = ".sign-up__toggle-switch-wrapper", LOGO = ".sign-up__logo-wrapper", FORM = ".sign-up__form-wrapper", SIGNCARDS = ".sign-up__sold-card-container";
+    const icons = qa(".phone-icons > g");
+    const iconHeadings = qa(".icon-heading");
+    const AFTER = ".iPhone-2-after-responding-icons", INTERN = ".iPhone-2-intern-circles", MASK = ".iPhone-2-front-mask";
+
+    let Z = `${50 * et(vw)}vw`, O = "210px";
+    if (size === "xxl") { Z = `${60 * et(vw)}vw`; O = "170px"; }
+
+    gsap.to(AVATARS, { opacity: 0, scale: 0 });
+    gsap.to(H1, { opacity: 1, duration: 0.2 });
+
+    const tl = gsap.timeline({
+      defaults: { ease: "sine.in" },
+      scrollTrigger: {
+        trigger: ".container__sale-section",
+        start: "1px top",
+        end: "+=2000%",
+        pin: true,
+        scrub: 2,
+        toggleActions: "play none reverse none",
+      },
+    });
+
+    gsap.set(H2, { x: 400 });
+    gsap.set(iconHeadings, { y: -50 });
+
+    // Insurance verticals: each icon moves to the centre with its label
+    const verticals = [
+      [1, ".heading-auto-insurance", "auto-insurance"],
+      [2, ".heading-medicare", "medicare"],
+      [3, ".heading-u65-health", "u65-health"],
+      [4, ".heading-life-insurance", "life-insurance"],
+      [5, ".heading-aca-health", "aca-health"],
+    ];
+    const iconsTl = gsap.timeline();
+    verticals.forEach(([i, heading, label], n) => {
+      const prev = n > 0 ? icons[verticals[n - 1][0]] : null;
+      iconsTl
+        .to(icons[i], {
+          delay: 1, duration: 3,
+          onStart: () => { prev?.classList.remove("center"); icons[i].classList.add("center"); },
+          onReverseComplete: () => { prev?.classList.add("center"); icons[i].classList.remove("center"); },
+        }, label)
+        .to(heading, { opacity: 1, y: 0, delay: 1, duration: 3 }, label)
+        .to(heading, { opacity: 0 });
+    });
+
+    const gradientOn = (el) => el?.classList.add("gradient-text");
+    const gradientOff = (el) => el?.classList.remove("gradient-text");
+
+    tl
+      // answer the call, hero copy leaves
+      .to(PHONE, { rotate: 22.5, yPercent: -30 }, "second-step")
+      .to(".iPhone-1-respond-btn-check", { xPercent: 245 })
+      .to(split.chars, { x: -600, opacity: 0, duration: 5 }, "first-heading")
+      .to(subWords, { x: -600, opacity: 0, duration: 5 }, "first-heading")
+      .to(".buy-now-btn__sale-section", { x: -600, opacity: 0, duration: 5 }, "first-heading")
+      // delivering quality calls
+      .to(H2, { x: 0, opacity: 1, duration: 5 }, "second-variation")
+      .to(PHONE, { rotate: 0, y: 0, duration: 5 }, "second-variation")
+      .to(".iPhone1-new-client-heading", { opacity: 0, y: -200, duration: 5 }, "second-variation")
+      .to(".iPhone-1-respond-btns-with-bg", { opacity: 0, duration: 5 }, "second-variation")
+      .to(PHONE, { scale: 1.15, xPercent: -100, duration: 5 }, "second-variation")
+      .to(CIRCLE, { scale: 0, opacity: 0, duration: 5 }, "second-variation")
+      .to(icons, { opacity: 1, stagger: 0.4 })
+      .add(iconsTl)
+      .to(icons, { opacity: 0, stagger: 0.4 })
+      .to(H2, { x: 400, opacity: 0, delay: 2, duration: 3 })
+      // swap to the second phone, avatars fly in
+      .to(PHONE, { scale: 1, delay: 2, x: -450, duration: 3 }, "moving-variation")
+      .to([".iphone-v1", CIRCLE], { opacity: 0, duration: 2 }, "replacing-iphone")
+      .to(V2, { opacity: 1 }, "replacing-iphone")
+      .to(AVATARS, { opacity: 1, scale: 1, delay: "random(0, 2)" })
+      .to(H3, { xPercent: 80, opacity: 1, duration: 3 }, "-=2")
+      .to(V2BOX, { x: `${28 * et(vw)}vw`, delay: 2, duration: 5 }, "third-variation")
+      .to(AVBOX, {
+        x: `${28 * et(vw)}vw`, delay: 2, duration: 5,
+        onStart: () => q(".instantly-avatars")?.classList.add("end-place"),
+        onReverseComplete: () => q(".instantly-avatars")?.classList.remove("end-place"),
+      }, "third-variation")
+      .to(H3, { xPercent: 200, scale: 0, opacity: 0, delay: 2, duration: 5 }, "third-variation")
+      .to(AVATARS, { opacity: 0, delay: "random(0,2)", stagger: 0.2 })
+      .to([AVBOX, AFTER, INTERN, MASK], { opacity: 0, delay: 2, duration: 3 }, "fourth-variation")
+      // sold cards
+      .to(V2BOX, { scale: 1.6, y: `${5 * et(vh)}vw`, transformOrigin: "top", duration: 4 })
+      .to(H4, { opacity: 1 })
+      .to(SOLD, { x: `${27 * et(vw)}vw`, stagger: 0.2, transformOrigin: "bottom", opacity: 1, duration: 4 }, "sold-cards")
+      .to(SOLD, { x: `${35 * et(vw)}vw`, delay: "random(1,3)", opacity: 0, duration: 4 })
+      .to(H4, { opacity: 0 })
+      // toggle on / off
+      .to(V2BOX, { scale: 1, y: 0, x: Z, duration: 3 })
+      .to([TOGGLE, LOGO], { opacity: 1, delay: 1 })
+      .to(TOGGLE, { delay: 1, onStart: toggle, onReverseComplete: toggle })
+      .to(`${H5} div`, { xPercent: 1, yPercent: -40, stagger: 0.2, opacity: 1, duration: 3 })
+      .to(TOGGLE, { opacity: 0, delay: 4, duration: 3 }, "sign-up-flow")
+      .to(h5divs, { x: -100, opacity: 0, delay: 4, duration: 3 }, "sign-up-flow")
+      // three steps
+      .to(steps, { x: -100, opacity: 0 })
+      .to(steps[0], { opacity: 1, x: 0, duration: 3 })
+      .to(steps[1], { opacity: 1, x: 0, delay: 2, duration: 3, onStart: () => gradientOn(steps[1]) }, "sign-up-flow-in")
+      .to(FORM, { opacity: 1, delay: 2, duration: 3 }, "sign-up-flow-in")
+      .to(FORM, { opacity: 0, delay: 5, duration: 2 })
+      .to(steps[2], {
+        opacity: 1, x: 0, delay: 2, duration: 3,
+        onStart: () => { gradientOff(steps[1]); gradientOn(steps[2]); },
+        onReverseComplete: () => { gradientOff(steps[2]); gradientOn(steps[1]); },
+      }, "insurance-flow")
+      .to(SIGNCARDS, { opacity: 1, delay: 2, duration: 3 }, "insurance-flow")
+      .to(V2, { zIndex: 3 })
+      .to(SIGNCARDS, { opacity: 0, delay: 5, duration: 3 })
+      .to(LOGO, { opacity: 0, delay: 2, duration: 3 }, "start-taking-calls")
+      .to(steps[3], {
+        opacity: 1, x: 0, delay: 2, duration: 3,
+        onStart: () => { gradientOff(steps[2]); gradientOn(steps[3]); },
+        onReverseComplete: () => { gradientOff(steps[3]); gradientOn(steps[2]); },
+      }, "start-taking-calls")
+      .to([AFTER, INTERN, MASK], { opacity: 1, stagger: 0.2, delay: 2, duration: 3 }, "start-taking-calls")
+      .to(steps, { stagger: 0.5, opacity: 0, x: -100, delay: 6, duration: 4 })
+      // laptop show-off
+      .to(V2BOX, { x: "55vw", y: O, scale: 0.6, rotate: -16, duration: 4, delay: 2 }, "laptop-showoff")
+      .to(LAPTOP, { opacity: 1, duration: 3, delay: 2 }, "laptop-showoff")
+      .to(PHONE, { x: "-78vw", duration: 3, delay: 2 }, "laptop-showoff")
+      .to(".floating-sold-card", { opacity: 1, stagger: 0.4, duration: 3 })
+      .to(V2BOX, { opacity: 0, delay: 3, duration: 3 })
+      // let's start now
+      .to(PHONE, { opacity: 0, delay: 1, duration: 4 }, "start-now-variation")
+      .to(LAPTOP, { scale: 10, delay: 1, duration: 10 }, "start-now-variation")
+      .to(LAPTOP, { opacity: 0 })
+      .to(STARTNOW, { opacity: 1, duration: 3 }, "-=1")
+      .to(STARTNOW, { delay: 5 });
+
+    return () => {
+      split.revert();
+      subSplits.forEach((s) => s.revert());
+      icons.forEach((g) => g.classList.remove("center"));
+      q(".instantly-avatars")?.classList.remove("end-place");
+      steps.forEach((s) => s.classList.remove("gradient-text"));
+      toggled = false;
+    };
+  }
+);
