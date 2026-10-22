@@ -7,26 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload" as="image" href="/assets/images/iphone-12-sale.png" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <svg width="0" height="0" style="position:absolute">
-      <defs>
-        <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#0066FF" />
-          <stop offset="1" stop-color="#00F5F0" />
-        </linearGradient>
-        <symbol id="logo-mark" viewBox="0 0 40 40">
-          <path d="M20 3 36 33H4L20 3Z" fill="none" stroke="url(#brand)" stroke-width="5" stroke-linejoin="round" />
-          <path d="M20 14 28 29H12L20 14Z" fill="url(#brand)" />
-        </symbol>
-      </defs>
-    </svg>
-
     <!-- ========== NAV ========== -->
     <header class="nav">
       <div class="nav__pill">
-        <a class="logo" href="#"><svg class="logo__mark"><use href="#logo-mark" /></svg><span>AllCalls.io</span></a>
+        <a class="logo" href="#"><img src="/assets/images/logo.png" alt="AllCalls.io" width="454" height="77" /></a>
         <button class="burger" aria-label="Menu"><i></i><i></i><i></i></button>
       </div>
     </header>
@@ -36,104 +24,22 @@
       <div class="story__pin">
         <div class="stage">
 
-          <!-- The phone (pinned, moved and re-skinned by GSAP) -->
           <div class="phone-anchor">
             <div class="phone-wrap">
-              <div class="glow"></div>
+              <img class="glow glow--circle" src="/assets/images/glow-circle.png" alt="" />
+              <img class="glow glow--mobile" src="/assets/images/mobile-bg.png" alt="" />
 
-              <!-- Floating insurance-vertical bubbles (state 1) -->
-              <div class="orbit orbit--icons">
-                <span class="bubble" style="--x:-120px;--y:-40px;--s:1.1;--d:0s">
-                  <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-                </span>
-                <span class="bubble" style="--x:70px;--y:-110px;--s:1.25;--d:.4s">
-                  <svg viewBox="0 0 24 24"><path d="M12 2c-3 3-7 4-7 9a7 7 0 0 0 14 0c0-5-4-6-7-9Z" fill="currentColor"/></svg>
-                </span>
-                <span class="bubble" style="--x:-70px;--y:70px;--s:1;--d:.8s">
-                  <svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9H3z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>
-                </span>
-                <span class="bubble bubble--sm" style="--x:10px;--y:10px;--s:.8;--d:1.2s">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
-                </span>
-                <span class="bubble" style="--x:60px;--y:60px;--s:1.15;--d:.2s">
-                  <svg viewBox="0 0 24 24"><path d="M4 13h16l-2-5H6l-2 5Zm0 0v5m16-5v5M7 18h3m4 0h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <span class="bubble" style="--x:-20px;--y:150px;--s:1.3;--d:.6s">
-                  <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 18 0H3Zm9 0v7a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                </span>
-              </div>
-
-              <!-- Dotted sound-wave rings (state 4) -->
-              <div class="orbit orbit--waves"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-
-              <!-- Floating client avatars (state 2) -->
-              <div class="orbit orbit--avatars">
-                <span class="avatar" style="--x:-60px;--y:-70px;--c1:#f6a;--c2:#c33;--d:0s">A</span>
-                <span class="avatar" style="--x:30px;--y:-90px;--c1:#9cf;--c2:#36c;--d:.3s">J</span>
-                <span class="avatar avatar--sm" style="--x:-25px;--y:-10px;--c1:#fc6;--c2:#c63;--d:.6s">M</span>
-                <span class="avatar avatar--sm" style="--x:40px;--y:0px;--c1:#6fc;--c2:#396;--d:.9s">E</span>
-                <span class="avatar" style="--x:-80px;--y:60px;--c1:#c9f;--c2:#63c;--d:1.2s">K</span>
-                <span class="avatar" style="--x:110px;--y:30px;--c1:#fff;--c2:#999;--d:.5s">S</span>
-              </div>
-
+              <!--
+                One phone. Each layer is a real render from the AllCalls.io site, positioned so the
+                phone frames line up exactly (see --iw/--ix/--iy in style.css). Layer 0 is always
+                visible and acts as the body; the others crossfade on top of it.
+              -->
               <div class="phone">
-                <div class="phone__frame">
-                  <div class="phone__notch"></div>
-                  <div class="phone__screen">
-
-                    <!-- State 0 / 2 : incoming call -->
-                    <div class="screen screen--call" data-screen="0">
-                      <div class="call__top">
-                        <small><i></i>AllCalls Audio...</small>
-                        <b>New Client Calling</b>
-                      </div>
-                      <div class="call__orb"><span></span><span></span><span></span></div>
-                      <div class="call__bar">
-                        <span class="rbtn rbtn--accept">✓</span>
-                        <span class="rbtn rbtn--decline">✕</span>
-                      </div>
-                    </div>
-
-                    <!-- State 1 : quality (dark, rings) -->
-                    <div class="screen screen--rings" data-screen="1">
-                      <div class="rings"><i></i><i></i><i></i></div>
-                    </div>
-
-                    <!-- State 2 : incoming call with labels -->
-                    <div class="screen screen--call screen--call2" data-screen="2">
-                      <div class="call__top">
-                        <small><i></i>AllCalls Audio...</small>
-                        <b>New Client Calling</b>
-                      </div>
-                      <div class="rings rings--soft"><i></i><i></i><i></i></div>
-                      <div class="call__actions">
-                        <div><span class="rbtn rbtn--red">✕</span><small>Decline</small></div>
-                        <div><span class="rbtn rbtn--blue">✓</span><small>Accept</small></div>
-                      </div>
-                    </div>
-
-                    <!-- State 3 : leads list -->
-                    <div class="screen screen--leads" data-screen="3">
-                      <ul class="leads">
-                        <li><span class="lead__av" style="--c1:#fc9;--c2:#c63">M</span><div><b>Melissa Carver</b><small>mjcdtexas@gmail.com</small></div><em>Policy Sold</em><i>›</i></li>
-                        <li><span class="lead__av" style="--c1:#c9f;--c2:#639">E</span><div><b>Esther Gomez</b><small>gonzalez_esther69@yahoo.com</small></div><em>Policy Sold</em><i>›</i></li>
-                        <li><span class="lead__av" style="--c1:#9cf;--c2:#369">M</span><div><b>Michelle Castillo</b><small>mbcastillo86@gmail.com</small></div><em>Policy Sold</em><i>›</i></li>
-                        <li><span class="lead__av" style="--c1:#9fc;--c2:#396">K</span><div><b>Kathy Topp</b><small>calgon_bubbles@gmail.com</small></div><em>Policy Sold</em><i>›</i></li>
-                        <li><span class="lead__av" style="--c1:#fc6;--c2:#c93">M</span><div><b>Melissa Carver</b><small>mjcdtexas@gmail.com</small></div><em>Policy Sold</em><i>›</i></li>
-                      </ul>
-                    </div>
-
-                    <!-- State 4 : on / off toggle -->
-                    <div class="screen screen--toggle" data-screen="4">
-                      <div class="waves">
-                        <i></i><i></i><i></i><i></i><i></i><i></i>
-                      </div>
-                      <div class="toggle__logo"><svg class="logo__mark"><use href="#logo-mark" /></svg><span>AllCalls.io</span></div>
-                      <div class="toggle"><span class="toggle__knob"></span></div>
-                    </div>
-
-                  </div>
-                </div>
+                <div class="layer layer--sale"    data-screen="0"><img src="/assets/images/iphone-12-sale.png"    alt="" /></div>
+                <div class="layer layer--quality" data-screen="1"><img src="/assets/images/iphone-12-quality.png" alt="" /></div>
+                <div class="layer layer--instant" data-screen="2"><img src="/assets/images/iphone-12-instant.png" alt="" /></div>
+                <div class="layer layer--connect" data-screen="3"><img src="/assets/images/iphone-12-connect.png" alt="" /></div>
+                <div class="layer layer--onoff"   data-screen="4"><img src="/assets/images/iphone-12-on-off.png"  alt="" /></div>
               </div>
             </div>
           </div>
@@ -155,6 +61,7 @@
 
           <div class="feature feature--right" data-feature="2">
             <div class="feature__inner">
+              <img class="text-bg" src="/assets/images/text-bg.png" alt="" />
               <h2 class="h h--xl">Instantly connect with <span class="grad">new clients</span> on demand.</h2>
             </div>
           </div>
@@ -191,7 +98,7 @@
 
     <!-- ========== START NOW ========== -->
     <section class="start" id="start">
-      <div class="start__bg"></div>
+      <img class="start__bg" src="/assets/images/start-bg.png" alt="" />
       <div class="start__inner">
         <h2 class="h h--xxl">Let’s start now</h2>
         <a class="btn" href="#">Buy calls now <i>›</i></a>
@@ -202,7 +109,7 @@
     <footer class="footer">
       <div class="footer__card">
         <div class="footer__row">
-          <a class="logo" href="#"><svg class="logo__mark"><use href="#logo-mark" /></svg><span>AllCalls.io</span></a>
+          <a class="logo" href="#"><img src="/assets/images/logo.png" alt="AllCalls.io" width="454" height="77" /></a>
           <nav class="footer__nav">
             <a href="#">Live Transfers</a><a href="#">Why AllCalls.io</a><a href="#">How It Works</a><a href="#">Careers</a><a href="#">Support</a>
           </nav>

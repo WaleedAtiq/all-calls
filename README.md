@@ -41,12 +41,22 @@ phone, `tilt` the rotateY used while the phone travels.
 To add a step: add a `.screen[data-screen=N]`, a `.feature[data-feature=N]`,
 a `.dot`, and an entry in `STATES`. The pin length and timeline adapt.
 
-## Swapping in real assets
+## Assets
 
-- **Logo**: `#logo-mark` is an inline SVG approximation. Replace the `<symbol>`
-  in `index.html` with the real mark, or drop an `<img>` into `.logo`.
-- **Screens**: each `.screen` is plain HTML/CSS. To use exported images
-  instead, put them in `public/screens/` and replace a screen's inner markup
-  with `<img src="/screens/x.png">` plus `object-fit: cover`.
-- **Background glows**: `.glow` and `.start__bg` are CSS radial gradients;
-  swap for the original `glow-circle.png` / `start-bg.png` if you prefer.
+Everything in `public/assets/images/` comes from the original AllCalls.io site
+(allcalls-next): the logo, the five iPhone renders, and the glow backgrounds.
+
+The five renders have the phone frame at different positions and sizes, so each
+one is wrapped in a `.layer` whose `--iw` / `--ix` / `--iy` custom properties
+scale and offset the image until its frame sits exactly on the `.phone` box
+(ratios measured from the PNGs: image width ÷ frame width, and the frame's
+x/y offset ÷ frame width). Layer 0 (`iphone-12-sale`) is always visible and acts
+as the phone body; the others crossfade on top of it, each with a solid black
+screen backing so the base never bleeds through.
+
+## Smooth scrolling
+
+[Lenis](https://github.com/darkroomengineering/lenis) drives the scroll and is
+ticked by GSAP, with `ScrollTrigger.update` wired to its scroll event. The pinned
+timeline uses `scrub: 1`; each step is a hold followed by a ~2-unit transition
+(see `HOLD` in `src/main.js`). Everything animated is transform/opacity only.

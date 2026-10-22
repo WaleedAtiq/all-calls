@@ -1,47 +1,64 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
 import "./style.css";
 
 gsap.registerPlugin(ScrollTrigger);
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
+/* ---------------------------------------------------------
+   Smooth scrolling (Lenis) driven by GSAP's ticker
+   --------------------------------------------------------- */
+const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+lenis.on("scroll", ScrollTrigger.update);
+gsap.ticker.add((t) => lenis.raf(t * 1000));
+gsap.ticker.lagSmoothing(0);
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener("click", (e) => {
+    const target = a.getAttribute("href");
+    if (target.length > 1 && document.querySelector(target)) { e.preventDefault(); lenis.scrollTo(target, { offset: -20 }); }
+  });
+});
+
 const isMobile = () => window.matchMedia("(max-width: 900px)").matches;
 
 /* ---------------------------------------------------------
-   Phone states — one entry per section the phone passes through.
-   x: horizontal offset (vw) from centre on desktop, scale: phone scale,
-   glow: opacity of the blue halo, orbit: which floating layer to show.
+   Phone states — one per section the phone passes through.
+   x: offset from centre (vw, 0 on mobile), scale: phone scale,
+   glow / mobileGlow: halo opacities, tilt: rotateY while travelling.
    --------------------------------------------------------- */
 const STATES = [
-  { x:  24, scale: .80, glow: 1,  orbit: null,            tilt: -12 }, // 0 hero: incoming call
-  { x:   4, scale: .95, glow: .35, orbit: ".orbit--icons",   tilt: 10 }, // 1 quality calls
-  { x: -26, scale: .85, glow: .45, orbit: ".orbit--avatars", tilt: -10 }, // 2 instantly connect
-  { x:   0, scale: 1.0, glow: 0,  orbit: null,            tilt: 0 },   // 3 leads list
-  { x:  22, scale: .70, glow: .3, orbit: ".orbit--waves",   tilt: 12 },  // 4 on / off
+  { x:  24, y:  0, scale: .85, glow: .55, mobileGlow: 0,   tilt: -10 }, // 0 hero: incoming call
+  { x:   4, y:  0, scale: 1.0, glow: .25, mobileGlow: 0,   tilt:   8 }, // 1 quality calls (icons baked in)
+  { x: -26, y:  0, scale: .90, glow: .40, mobileGlow: 0,   tilt:  -8 }, // 2 instantly connect (avatars baked in)
+  { x:   0, y: 140, scale: 1.05, glow: 0, mobileGlow: .35, tilt:   0 }, // 3 leads list (sits lower, cropped by the fold)
+  { x:  22, y:  0, scale: .80, glow: .20, mobileGlow: 0,   tilt:   8 }, // 4 on / off (rings baked in)
 ];
 const STEPS = STATES.length;
 
-const screens  = gsap.utils.toArray(".screen");
+const layers   = gsap.utils.toArray(".layer");
 const features = gsap.utils.toArray(".feature");
 const dots     = gsap.utils.toArray(".dot");
-const orbits   = gsap.utils.toArray(".orbit");
 
 const vw = (n) => () => (isMobile() ? 0 : (window.innerWidth * n) / 100);
 const sc = (n) => () => (isMobile() ? 1 : n);
+const py = (n) => () => (isMobile() ? 0 : n);
+const show = (el) => gsap.set(el, { visibility: "visible" });
+const hide = (el) => gsap.set(el, { visibility: "hidden" });
 
 /* ---------------------------------------------------------
    1. Intro (on load)
    --------------------------------------------------------- */
-gsap.set(".phone-wrap", { x: vw(STATES[0].x), scale: sc(STATES[0].scale) });
-gsap.set(".glow", { opacity: STATES[0].glow });
+gsap.set(".phone-wrap", { x: vw(STATES[0].x), y: py(STATES[0].y), scale: sc(STATES[0].scale), force3D: true });
+gsap.set(".glow--circle", { opacity: STATES[0].glow });
 gsap.set(features, { opacity: 0, visibility: "hidden" });
 gsap.set(features[0], { opacity: 1, visibility: "visible" });
 
 gsap.timeline({ defaults: { ease: "power3.out" } })
   .from(".nav__pill", { y: -40, opacity: 0, duration: .8 })
   .from(features[0].querySelectorAll(".h, .lead, .btn"), { y: 40, opacity: 0, duration: .9, stagger: .1 }, "-=.4")
-  .from(".phone", { y: 120, rotateY: -25, opacity: 0, duration: 1.2 }, "-=.9")
-  .from(".glow", { scale: .4, opacity: 0, duration: 1.4 }, "<");
+  .from(".phone", { y: 90, rotateY: -18, opacity: 0, duration: 1.3, force3D: true }, "-=.9")
+  .from(".glow--circle", { scale: .6, opacity: 0, duration: 1.6 }, "<");
 
 /* ---------------------------------------------------------
    2. Pinned, scrubbed story
@@ -51,9 +68,9 @@ const story = gsap.timeline({
   scrollTrigger: {
     trigger: ".story",
     start: "top top",
-    end: () => `+=${(STEPS - 1) * 120}%`,
+    end: () => `+=${(STEPS - 1) * 140}%`,   // 1.4 viewport heights of scroll per step
     pin: ".story__pin",
-    scrub: .7,
+    scrub: 1,
     anticipatePin: 1,
     invalidateOnRefresh: true,
     onUpdate(self) {
@@ -63,58 +80,40 @@ const story = gsap.timeline({
   },
 });
 
-const show = (el) => gsap.set(el, { visibility: "visible" });
-const hide = (el) => gsap.set(el, { visibility: "hidden" });
-
 for (let i = 0; i < STEPS - 1; i++) {
   const next = i + 1;
-  const cur = STATES[i], to = STATES[next];
+  const to = STATES[next];
   const L = `s${i}`;
   story.addLabel(L);
 
-  // Hold, then transition. Durations are "scroll units" — relative only.
-  story.to({}, { duration: .6 }, L);
+  // Durations are relative scroll units: HOLD of stillness, then a ~2.1-unit transition.
+  const HOLD = 1.3, T = L + `+=${HOLD}`;
+  story.to({}, { duration: HOLD }, L);
 
-  // -- copy out
-  story.to(features[i], { opacity: 0, duration: .4, onComplete: () => hide(features[i]), onReverseComplete: () => show(features[i]) }, L + "+=.6");
-  story.to(features[i].querySelector(".feature__inner"), { y: -40, duration: .5 }, L + "+=.6");
+  // copy out
+  story.to(features[i].querySelector(".feature__inner"), { y: -30, opacity: 0, duration: .6, ease: "power2.in",
+    onComplete: () => hide(features[i]), onReverseComplete: () => show(features[i]) }, T);
 
-  // -- orbit layer out
-  if (cur.orbit) story.to(cur.orbit, { opacity: 0, scale: .8, duration: .4, onComplete: () => hide(cur.orbit), onReverseComplete: () => show(cur.orbit) }, L + "+=.6");
+  // phone travels; tilt into the move and settle
+  story.to(".phone-wrap", { x: vw(to.x), y: py(to.y), scale: sc(to.scale), duration: 2, ease: "power2.inOut" }, T + "+.1");
+  story.to(".phone", { rotateY: () => (isMobile() ? 0 : to.tilt), duration: 1, ease: "power2.out" }, T + "+.1");
+  story.to(".phone", { rotateY: 0, duration: 1, ease: "power2.inOut" }, T + "+1.1");
+  story.to(".glow--circle", { opacity: to.glow, duration: 1.6 }, T + "+.1");
+  story.to(".glow--mobile", { opacity: to.mobileGlow, duration: 1.6 }, T + "+.1");
 
-  // -- phone travels: tilt into the move, settle at the new position/scale
-  story.to(".phone-wrap", { x: vw(to.x), scale: sc(to.scale), duration: 1.2 }, L + "+=.7");
-  story.to(".phone", { rotateY: () => (isMobile() ? 0 : to.tilt), rotateZ: () => (isMobile() ? 0 : to.tilt / 4), duration: .6 }, L + "+=.7");
-  story.to(".phone", { rotateY: 0, rotateZ: 0, duration: .6 }, L + "+=1.3");
-  story.to(".glow", { opacity: to.glow, duration: 1 }, L + "+=.7");
+  // screen crossfade mid-travel: next fades in on top, previous overlay releases after
+  story.to(layers[next], { opacity: 1, duration: 1, ease: "power1.inOut" }, T + "+.6");
+  if (i > 0) story.to(layers[i], { opacity: 0, duration: .5 }, T + "+1.4");
 
-  // -- screen crossfade mid-travel
-  story.to(screens[i], { opacity: 0, duration: .35, onComplete: () => hide(screens[i]), onReverseComplete: () => show(screens[i]) }, L + "+=1.1");
-  story.fromTo(screens[next], { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: .45, onStart: () => show(screens[next]), onReverseComplete: () => hide(screens[next]) }, L + "+=1.25");
-
-  // -- screen specific flourishes
-  if (next === 3) {
-    story.from(".leads li", { y: 40, opacity: 0, stagger: .08, duration: .5 }, L + "+=1.4");
-  }
-  if (next === 4) {
-    story.fromTo(".toggle__knob", { x: 0 }, { x: 40, duration: .4, ease: "back.out(2)" }, L + "+=1.9");
-    story.to(".toggle", { backgroundColor: "#0066ff", duration: .4 }, L + "+=1.9");
-    story.from(".orbit--waves i, .waves i", { scale: 0, opacity: 0, stagger: .05, duration: .6, ease: "power2.out" }, L + "+=1.6");
-  }
-
-  // -- orbit layer in
-  if (to.orbit) story.fromTo(to.orbit, { opacity: 0, scale: .8 }, { opacity: 1, scale: 1, duration: .5, onStart: () => show(to.orbit), onReverseComplete: () => hide(to.orbit) }, L + "+=1.5");
-
-  // -- copy in
-  story.fromTo(features[next], { opacity: 0 }, { opacity: 1, duration: .5, onStart: () => show(features[next]), onReverseComplete: () => hide(features[next]) }, L + "+=1.6");
-  story.fromTo(features[next].querySelector(".feature__inner"), { y: 40 }, { y: 0, duration: .6 }, L + "+=1.6");
+  // copy in
+  story.fromTo(features[next].querySelector(".feature__inner"), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .8, ease: "power2.out",
+    onStart: () => { show(features[next]); gsap.set(features[next], { opacity: 1 }); }, onReverseComplete: () => hide(features[next]) }, T + "+1.3");
 }
 story.addLabel(`s${STEPS - 1}`);
+story.to({}, { duration: 1.3 });
 
-story.to({}, { duration: .6 });
-
-// idle float
-gsap.to(".phone-wrap", { y: -10, duration: 2.6, ease: "sine.inOut", yoyo: true, repeat: -1 });
+// idle float on the wrapper's parent so it never fights the scroll tweens
+gsap.to(".phone-anchor", { y: -8, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 });
 
 /* ---------------------------------------------------------
    3. Below the fold
@@ -126,7 +125,7 @@ gsap.from(".steps__list li", { x: -40, opacity: 0, stagger: .15, duration: .7, e
 
 gsap.from(".start__inner > *", { y: 40, opacity: 0, stagger: .15, duration: .9, ease: "power3.out",
   scrollTrigger: { trigger: ".start", start: "top 70%", once: true } });
-gsap.fromTo(".start__bg", { scale: 1.2, opacity: .4 }, { scale: 1, opacity: 1, ease: "none",
+gsap.fromTo(".start__bg", { scale: 1.15, opacity: .5 }, { scale: 1, opacity: 1, ease: "none",
   scrollTrigger: { trigger: ".start", start: "top bottom", end: "center center", scrub: true } });
 
 gsap.from(".footer__card", { y: 40, opacity: 0, duration: .9, ease: "power3.out",
