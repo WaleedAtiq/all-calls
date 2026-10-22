@@ -1,17 +1,11 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
-import Lenis from "lenis";
 import "./style.css";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-/* Smooth scrolling (Lenis) ticked by GSAP so ScrollTrigger and Lenis stay in sync */
-const lenis = new Lenis({ lerp: 0.3, smoothWheel: true });
-lenis.on("scroll", ScrollTrigger.update);
-gsap.ticker.add((t) => lenis.raf(t * 1000));
-gsap.ticker.lagSmoothing(0);
 
 const q = (s) => document.querySelector(s);
 const qa = (s) => gsap.utils.toArray(s);
@@ -236,7 +230,7 @@ mm.add(
       positions.forEach((pos, i) => { if (p >= pos - 0.01) active = i; });
       dots.forEach((d, i) => d.classList.toggle("is-active", i === active));
     };
-    dots.forEach((d, i) => d.addEventListener("click", () => lenis.scrollTo(st.start + (st.end - st.start) * positions[i] + 2, { duration: 1.6 })));
+    dots.forEach((d, i) => d.addEventListener("click", () => window.scrollTo({ top: st.start + (st.end - st.start) * positions[i] + 2, behavior: "smooth" })));
 
     return () => {
       intro.kill();
