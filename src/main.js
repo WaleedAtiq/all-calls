@@ -30,6 +30,7 @@ function toggle() {
   } else {
     gsap.to(".toggle-switch-inner", { xPercent: 80 });
     gsap.to(".toggle-switch-bar", { backgroundColor: "rgb(49, 197, 91)", opacity: 1 });
+    gsap.fromTo(".toggle-switch-inner", { scale: 0.8 }, { scale: 1, duration: 0.6, ease: "back.out(3)", overwrite: "auto" });
   }
   toggled = !toggled;
 }
@@ -57,9 +58,12 @@ mm.add(
     const size = lg && xl && xxl ? "lg" : !lg && xl && xxl ? "xl" : "xxl";
     const vw = window.innerWidth, vh = window.innerHeight;
 
-    const split = new SplitText(".heading__sale-section", { type: "chars,words" });
-    const subSplits = qa(".sub-text__sale-section div").map((el) => new SplitText(el, { type: "chars,words" }));
+    const split = new SplitText(".heading__sale-section", { type: "chars,words", charsClass: "char", wordsClass: "word" });
+    const subSplits = qa(".sub-text__sale-section div").map((el) => new SplitText(el, { type: "chars,words", charsClass: "char", wordsClass: "word" }));
     const subWords = subSplits.map((s) => s.words);
+    const h2Words = new SplitText(".heading-2 h2", { type: "words", wordsClass: "word" }).words;
+    const h3Words = new SplitText(".heading-3 h2", { type: "words", wordsClass: "word" }).words;
+    const stepMainWords = new SplitText(".heading-step-main", { type: "words", wordsClass: "word" }).words;
 
     const PHONE = ".phone", V2 = ".iphone-v2", H2 = ".heading-2", H1 = ".heading-1", H3 = ".heading-3", H4 = ".heading-4", H5 = ".heading-5";
     const h5divs = qa(`${H5} div`);
@@ -86,6 +90,16 @@ mm.add(
       .from(".buy-now-btn__sale-section", { y: 24, opacity: 0, duration: 0.6 }, "-=0.35")
       .from(".iphone-v1", { y: 80, opacity: 0, duration: 1.2, ease: "power2.out" }, 0.2)
       .from(CIRCLE, { opacity: 0, duration: 1.4 }, 0.3);
+
+    // Magnetic buttons: the pill follows the cursor a little while hovered
+    const magnets = qa(".nav-bar .chakra-button, .buy-now-btn__sale-section .chakra-button, .start-now .chakra-button").map((btn) => {
+      const toX = gsap.quickTo(btn, "x", { duration: 0.5, ease: "power3.out" });
+      const toY = gsap.quickTo(btn, "y", { duration: 0.5, ease: "power3.out" });
+      const move = (e) => { const r = btn.getBoundingClientRect(); toX((e.clientX - r.left - r.width / 2) * 0.35); toY((e.clientY - r.top - r.height / 2) * 0.35); };
+      const leave = () => { toX(0); toY(0); };
+      btn.addEventListener("mousemove", move); btn.addEventListener("mouseleave", leave);
+      return () => { btn.removeEventListener("mousemove", move); btn.removeEventListener("mouseleave", leave); gsap.set(btn, { clearProps: "x,y" }); };
+    });
 
     // Idle float + mouse parallax on the phone group (CSS `translate`, see style.css)
     const group = q(".css-fsp7c9");
@@ -145,6 +159,7 @@ mm.add(
       .to(".buy-now-btn__sale-section", { x: -600, opacity: 0, duration: 5 }, "first-heading")
       // delivering quality calls
       .to(H2, { x: 0, opacity: 1, duration: 5 }, "second-variation")
+      .from(h2Words, { y: 50, opacity: 0, rotateX: -40, stagger: 0.25, duration: 3, ease: "power3.out" }, "second-variation+=1")
       .to(PHONE, { rotate: 0, y: 0, duration: 5 }, "second-variation")
       .to(".iPhone1-new-client-heading", { opacity: 0, y: -200, duration: 5 }, "second-variation")
       .to(".iPhone-1-respond-btns-with-bg", { opacity: 0, duration: 5 }, "second-variation")
@@ -160,6 +175,7 @@ mm.add(
       .to(V2, { opacity: 1 }, "replacing-iphone")
       .to(AVATARS, { opacity: 1, scale: 1, delay: "random(0, 2)" })
       .to(H3, { xPercent: 80, opacity: 1, duration: 3 }, "-=2")
+      .from(h3Words, { y: 40, opacity: 0, stagger: 0.18, duration: 2.5, ease: "power3.out" }, "<+=0.5")
       .to(V2BOX, { x: `${28 * et(vw)}vw`, delay: 2, duration: 5 }, "third-variation")
       .to(AVBOX, {
         x: `${28 * et(vw)}vw`, delay: 2, duration: 5,
@@ -173,6 +189,7 @@ mm.add(
       .to(V2BOX, { scale: 1.6, y: `${5 * et(vh)}vw`, transformOrigin: "top", duration: 4 })
       .to(H4, { opacity: 1 })
       .to(SOLD, { x: `${27 * et(vw)}vw`, stagger: 0.2, transformOrigin: "bottom", opacity: 1, duration: 4 }, "sold-cards")
+      .from(SOLD, { rotateY: 45, rotateX: -12, z: -200, stagger: 0.2, duration: 4, ease: "power3.out" }, "sold-cards")
       .to(SOLD, { x: `${35 * et(vw)}vw`, delay: "random(1,3)", opacity: 0, duration: 4 })
       .to(H4, { opacity: 0 })
       // toggle on / off
@@ -186,7 +203,9 @@ mm.add(
       // three steps
       .to(steps, { x: -100, opacity: 0 })
       .to(steps[0], { opacity: 1, x: 0, duration: 3 })
+      .from(stepMainWords, { y: 30, opacity: 0, stagger: 0.12, duration: 2, ease: "power3.out" }, "<")
       .to(steps[1], { opacity: 1, x: 0, delay: 2, duration: 3, onStart: () => gradientOn(steps[1]) }, "sign-up-flow-in")
+      .from(steps[1].querySelector("h2"), { scale: 0.4, rotate: -20, delay: 2, duration: 2, ease: "back.out(2.5)" }, "sign-up-flow-in")
       .to(FORM, { opacity: 1, delay: 2, duration: 3 }, "sign-up-flow-in")
       .to(FORM, { opacity: 0, delay: 5, duration: 2 })
       .to(steps[2], {
@@ -194,6 +213,7 @@ mm.add(
         onStart: () => { gradientOff(steps[1]); gradientOn(steps[2]); },
         onReverseComplete: () => { gradientOff(steps[2]); gradientOn(steps[1]); },
       }, "insurance-flow")
+      .from(steps[2].querySelector("h2"), { scale: 0.4, rotate: -20, delay: 2, duration: 2, ease: "back.out(2.5)" }, "insurance-flow")
       .to(SIGNCARDS, { opacity: 1, delay: 2, duration: 3 }, "insurance-flow")
       .to(V2, { zIndex: 3 })
       .to(SIGNCARDS, { opacity: 0, delay: 5, duration: 3 })
@@ -203,6 +223,7 @@ mm.add(
         onStart: () => { gradientOff(steps[2]); gradientOn(steps[3]); },
         onReverseComplete: () => { gradientOff(steps[3]); gradientOn(steps[2]); },
       }, "start-taking-calls")
+      .from(steps[3].querySelector("h2"), { scale: 0.4, rotate: -20, delay: 2, duration: 2, ease: "back.out(2.5)" }, "start-taking-calls")
       .to([AFTER, INTERN, MASK], { opacity: 1, stagger: 0.2, delay: 2, duration: 3 }, "start-taking-calls")
       .to(steps, { stagger: 0.5, opacity: 0, x: -100, delay: 6, duration: 4 })
       // laptop show-off
@@ -218,7 +239,17 @@ mm.add(
       // the 10x laptop would otherwise keep stretching the page below the footer
       .set(LAPTOP, { scale: 1 })
       .to(STARTNOW, { opacity: 1, duration: 3 }, "-=1")
+      .from(".start-now img", { scale: 1.25, duration: 8, ease: "power1.out" }, "<")
+      .from(".start-now h2", { y: 60, scale: 0.85, opacity: 0, duration: 3, ease: "power3.out" }, "<+=0.5")
+      .from(".start-now button", { y: 30, opacity: 0, duration: 2.5, ease: "back.out(2)" }, "<+=1")
       .to(STARTNOW, { delay: 5 });
+
+    // Scroll hint fades as soon as the story starts; progress bar follows the pin
+    const hint = q(".xp-scroll-hint"), bar = q(".xp-progressbar i");
+    const hintSt = ScrollTrigger.create({ start: 40, end: "max",
+      onEnter: () => gsap.to(hint, { opacity: 0, duration: 0.4 }), onLeaveBack: () => gsap.to(hint, { opacity: 1, duration: 0.4 }) });
+    const barSet = gsap.quickSetter(bar, "scaleX");
+    const prevUpdate = updateDots;
 
     // Progress dots: one per timeline label, click to jump there
     const dots = qa(".xp-progress button");
@@ -226,6 +257,7 @@ mm.add(
     const labelProgress = (name) => (name === "hero" ? 0 : (tl.labels[name] ?? 0) / tl.duration());
     const positions = dots.map((d) => labelProgress(d.dataset.label));
     updateDots = (p) => {
+      barSet(p);
       let active = 0;
       positions.forEach((pos, i) => { if (p >= pos - 0.01) active = i; });
       dots.forEach((d, i) => d.classList.toggle("is-active", i === active));
@@ -233,9 +265,11 @@ mm.add(
     dots.forEach((d, i) => d.addEventListener("click", () => window.scrollTo({ top: st.start + (st.end - st.start) * positions[i] + 2, behavior: "smooth" })));
 
     return () => {
+      hintSt.kill();
       intro.kill();
       float.kill();
       window.removeEventListener("mousemove", onMove);
+      magnets.forEach((off) => off());
       gsap.set(group, { clearProps: "--px,--py,--float" });
       split.revert();
       subSplits.forEach((s) => s.revert());
@@ -251,6 +285,10 @@ mm.add(
    Below 1366px: stacked layout with gentle reveals
    --------------------------------------------------------- */
 mm.add("(max-width: 1365px)", () => {
+  qa(".xp-mobile img[src*='glow'], .xp-mobile img[src*='-bg']").forEach((img) => {
+    gsap.fromTo(img, { yPercent: -12 }, { yPercent: 12, ease: "none",
+      scrollTrigger: { trigger: img.closest(".chakra-container") || img, start: "top bottom", end: "bottom top", scrub: true } });
+  });
   qa(".xp-mobile .chakra-container").forEach((block) => {
     const text = block.querySelectorAll("h2, p, button");
     const media = block.querySelectorAll("img");

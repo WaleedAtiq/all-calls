@@ -39,9 +39,11 @@ const html = `<!doctype html>
   <body class="chakra-ui-light">
     <div class="css-79elbk">
       ${nav}
+      <div class="xp-progressbar" aria-hidden="true"><i></i></div>
       <!-- Desktop (>= 1366px): one pinned section, every state driven by the scroll timeline -->
       <div class="xp-desktop">
         ${section}
+        <div class="xp-scroll-hint" aria-hidden="true"><span>Scroll</span><i></i></div>
         <nav class="xp-progress" aria-label="Sections">
           <button data-label="hero"><span>Your next sale</span></button>
           <button data-label="second-variation"><span>Quality calls</span></button>

@@ -52,6 +52,33 @@ img { max-width: 100%; }
 }
 .xp-progress button:hover span, .xp-progress button.is-active span { opacity: .9; transform: translateY(-50%) translateX(0); }
 
+/* Scroll progress bar under the nav */
+.xp-progressbar { position: fixed; left: 0; top: 0; width: 100%; height: 3px; z-index: 30; pointer-events: none; }
+.xp-progressbar i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, #0066ff, #00f5f0); box-shadow: 0 0 12px rgba(0,245,240,.6); }
+
+/* Scroll hint under the hero */
+.xp-scroll-hint {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
+  font: 600 11px/1 "Inter", sans-serif; letter-spacing: .3em; text-transform: uppercase; color: rgba(255,255,255,.6);
+}
+.xp-scroll-hint i { width: 1px; height: 38px; background: linear-gradient(180deg, #00f5f0, transparent); animation: hint 1.6s ease-in-out infinite; transform-origin: top; }
+@keyframes hint { 0% { transform: scaleY(0); opacity: 0 } 40% { transform: scaleY(1); opacity: 1 } 100% { transform: scaleY(1) translateY(16px); opacity: 0 } }
+
+/* Word-split gradient headings keep their gradient per word */
+.xp-desktop .css-1jfbblq .word { background-image: linear-gradient(to left, #00f5f0, #06f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.xp-desktop .heading-2 .word, .xp-desktop .heading-3 .word, .xp-desktop .heading-step-main .word { will-change: transform, opacity; }
+
+/* 3D fly-in for the sold cards */
+.xp-desktop .sold-card-container { perspective: 1200px; }
+.xp-desktop .sold-card-container .sold-card { transform-style: preserve-3d; backface-visibility: hidden; }
+
+/* Mobile: phones float, glows drift */
+.xp-mobile img[src*="iphone-12"] { animation: floaty 5s ease-in-out infinite; }
+@keyframes floaty { 0%, 100% { translate: 0 0 } 50% { translate: 0 -12px } }
+
 @media (prefers-reduced-motion: reduce) {
+  .xp-scroll-hint i, .xp-mobile img[src*="iphone-12"] { animation: none; }
   .xp-desktop .css-fsp7c9 { translate: none; }
 }

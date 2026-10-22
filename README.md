@@ -49,3 +49,17 @@ breakpoint tears down and rebuilds the timeline cleanly.
 - **No gap after the footer**: the laptop is reset to scale 1 once it has faded
   out, so its 10× size no longer stretches the page.
 - **Mobile reveals**: headings, copy and images fade up as they enter.
+
+### Second polish pass
+
+- **Word-by-word headings**: "Delivering quality calls…", "Instantly connect…" and the
+  three-steps title reveal word by word (SplitText), gradient words included.
+- **Step numbers pop** in with a back-ease and a small rotation as each step appears.
+- **Sold cards fly in with 3D depth** (rotateY / rotateX / z) under a perspective.
+- **"Let's start now"**: the background slowly zooms out, the heading scales up and the
+  button pops, instead of a flat fade.
+- **Toggle knob pulse** when the switch turns on.
+- **Magnetic buttons**: the nav, hero and start-now pills follow the cursor while hovered.
+- **Scroll progress bar** at the very top, tied to the pinned section.
+- **Scroll hint** under the hero that fades as soon as scrolling starts.
+- **Mobile**: phones float gently and the glow backgrounds parallax on scroll.
