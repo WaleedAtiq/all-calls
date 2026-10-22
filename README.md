@@ -36,7 +36,7 @@ breakpoint tears down and rebuilds the timeline cleanly.
 
 ## What was added on top of the original
 
-- **Lenis smooth scrolling** (lerp 0.2), ticked by GSAP, with the timeline scrub at 0.8.
+- **Lenis smooth scrolling** (lerp 0.3), ticked by GSAP, with the timeline scrub at 0.5.
 - **Hero intro**: the title characters rise in with a stagger, then the copy, the
   button, the phone and the glow.
 - **Smoother eases**: the timeline default is `power2.inOut` instead of `sine.in`.
