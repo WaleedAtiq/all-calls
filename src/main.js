@@ -8,7 +8,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
 /* Smooth scrolling (Lenis) ticked by GSAP so ScrollTrigger and Lenis stay in sync */
-const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+const lenis = new Lenis({ lerp: 0.2, smoothWheel: true });
 lenis.on("scroll", ScrollTrigger.update);
 gsap.ticker.add((t) => lenis.raf(t * 1000));
 gsap.ticker.lagSmoothing(0);
@@ -108,7 +108,7 @@ mm.add(
         start: "1px top",
         end: "+=2000%",
         pin: true,
-        scrub: 1.5,
+        scrub: 0.8,
         toggleActions: "play none reverse none",
         onUpdate: (self) => updateDots(self.progress),
         onToggle: (self) => dotsNav?.classList.toggle("is-visible", self.isActive),
